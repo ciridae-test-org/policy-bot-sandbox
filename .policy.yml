@@ -1,0 +1,52 @@
+# Spike policy for ciridae-test-org/policy-bot-sandbox.
+# Mirrors the intended ciridae-ai/ciridae gate: sensitive paths need a
+# designated reviewer; everything else can pass with no human review.
+#
+# Teams are not readable with the current PAT, so the "platform" reviewer
+# is cyridae for this spike. Swap to a team (e.g. ciridae-test-org/platform-team)
+# once the token has Organization Members / Team permissions.
+
+policy:
+  approval:
+    - or:
+      - platform reviewer has approved
+      - only low-risk files have changed
+
+approval_defaults:
+  options:
+    invalidate_on_push: true
+    github_review: true
+
+approval_rules:
+  - name: platform reviewer has approved
+    requires:
+      count: 1
+      users:
+        - cyridae
+    options:
+      request_review:
+        enabled: true
+        mode: all-users
+
+  - name: only low-risk files have changed
+    if:
+      no_changed_files:
+        globs:
+          - "**/*.tf"
+          - "**/*.tfvars"
+          - "**/Dockerfile*"
+          - "**/.dockerignore"
+          - "**/docker-compose*.yml"
+          - "**/*secret*"
+          - "**/*credential*"
+          - ".github/workflows/**"
+          - "apps/ghost-envs/**"
+          - "apps/crucible-*/**"
+          - "template/**/routes/**"
+          - "APPROVAL_POLICY.md"
+          - ".cursor/approval-policies/**"
+          - ".policy.yml"
+      modified_lines:
+        total: "< 1000"
+    requires:
+      count: 0
